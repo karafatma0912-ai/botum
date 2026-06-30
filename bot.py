@@ -85,7 +85,7 @@ class EtkinlikView(View):
     async def bitir(self, i: discord.Interaction, b: Button):
         if i.user.guild_permissions.manage_messages:
             # Rolleri katılımcılardan sil
-            rol = i.guild.get_role(ETKINLIK_ROL_ID)
+            rol = i.guild.get_role(1520077448358658138)
             if rol:
                 for user_id in self.liste:
                     member = i.guild.get_member(user_id)
