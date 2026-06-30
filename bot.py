@@ -84,13 +84,14 @@ class EtkinlikView(View):
     @discord.ui.button(label="Etkinliği Bitir 🏁", style=discord.ButtonStyle.secondary, custom_id="INGAME_BITIR_666")
     async def bitir(self, i: discord.Interaction, b: Button):
         if i.user.guild_permissions.manage_messages:
-            # Rolleri katılımcılardan sil
+            await i.response.defer()
             rol = i.guild.get_role(1520077448358658138)
             if rol:
                 for user_id in self.liste:
-                    member = i.guild.get_member(user_id)
+                    member = i.guild.get_member(user_id) or await i.guild.fetch_member(user_id)
                     if member:
-                        await member.remove_roles(rol)
+                        try: await member.remove_roles(rol)
+                        except: pass
             
             txt = "\n".join([f"**{i+1}.** <@{u}>" for i, u in enumerate(self.liste)])
             embed = discord.Embed(title=f"🏁 {self.ad} Etkinliği Bitti!", description=f"**Katılımcı Listesi:**\n{txt if self.liste else 'Katılımcı yok.'}", color=discord.Color.gold())
