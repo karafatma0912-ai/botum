@@ -11,6 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 TICKET_KATEGORI_ID = 1519782776067330078
 DESTEK_EKIBI_ROL_ID = 1514015410318479440
 ETKINLIK_ROL_ID = 1520077448358658138
+ONAY_RED_KANAL_ID = 1234567890123456789 # BURAYA KANAL ID'Nİ YAZ
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
 TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/1484955416327749783/14.png"
 
@@ -20,10 +21,18 @@ class TicketYonetimView(View):
 
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
+        log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
+        if log_kanal:
+            basvuran = i.channel.name.replace("başvuru-", "")
+            await log_kanal.send(f"@{basvuran} başvurunuz onaylandı ✅")
         await i.response.send_message(f"Başvuru {i.user.mention} tarafından onaylandı!", ephemeral=False)
 
     @discord.ui.button(label="Red ❌", style=discord.ButtonStyle.red, custom_id="TICKET_RED_BTN")
     async def red(self, i: discord.Interaction, b: Button):
+        log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
+        if log_kanal:
+            basvuran = i.channel.name.replace("başvuru-", "")
+            await log_kanal.send(f"@{basvuran} başvurunuz reddedildi ❌")
         await i.response.send_message("Başvuru reddedildi. Kanal 5 saniye içinde silinecektir.", ephemeral=False)
         await asyncio.sleep(5)
         await i.channel.delete()
@@ -105,7 +114,6 @@ async def ingame(ctx, *, args: str):
 async def on_ready():
     bot.add_view(TicketPaneliView())
     bot.add_view(TicketYonetimView())
-    # NOT: EtkinlikView dinamik olduğu için on_ready'de sabit eklenmez.
     print(f"✅ {bot.user} aktif ve butonlar sisteme tanıtıldı.")
 
 bot.run(os.environ['TOKEN'])
