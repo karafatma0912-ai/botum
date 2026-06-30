@@ -53,8 +53,8 @@ class TicketPaneliView(View):
         overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         
         # İki role de izinleri ekledik
-        rol1 = i.guild.get_role(DESTEK_EKIBI_ROL_ID)
-        rol2 = i.guild.get_role(EKSTRA_YETKILI_ROL_ID)
+        rol1 = i.guild.get_role(1514015410318479440)
+        rol2 = i.guild.get_role(1484932780902191104)
         if rol1: overwrites[rol1] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
         if rol2: overwrites[rol2] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
         
