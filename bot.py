@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 TICKET_KATEGORI_ID = 1519782776067330078
 DESTEK_EKIBI_ROL_ID = 1514015410318479440
 ETKINLIK_ROL_ID = 1520077448358658138
-ONAY_RED_KANAL_ID = 1484933527668785323 # Buraya onay-red kanalının ID'sini yaz
+ONAY_RED_KANAL_ID = 1484933527668785323 
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
 TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/1484955416327749783/14.png"
 
@@ -84,6 +84,14 @@ class EtkinlikView(View):
     @discord.ui.button(label="Etkinliği Bitir 🏁", style=discord.ButtonStyle.secondary, custom_id="INGAME_BITIR_666")
     async def bitir(self, i: discord.Interaction, b: Button):
         if i.user.guild_permissions.manage_messages:
+            # Rolleri katılımcılardan sil
+            rol = i.guild.get_role(ETKINLIK_ROL_ID)
+            if rol:
+                for user_id in self.liste:
+                    member = i.guild.get_member(user_id)
+                    if member:
+                        await member.remove_roles(rol)
+            
             txt = "\n".join([f"**{i+1}.** <@{u}>" for i, u in enumerate(self.liste)])
             embed = discord.Embed(title=f"🏁 {self.ad} Etkinliği Bitti!", description=f"**Katılımcı Listesi:**\n{txt if self.liste else 'Katılımcı yok.'}", color=discord.Color.gold())
             await i.channel.send(embed=embed)
