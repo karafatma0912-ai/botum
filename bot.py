@@ -105,6 +105,7 @@ async def ingame(ctx, *, args: str):
 async def on_ready():
     bot.add_view(TicketPaneliView())
     bot.add_view(TicketYonetimView())
-    print(f"✅ {bot.user} aktif.")
+    # NOT: EtkinlikView dinamik olduğu için on_ready'de sabit eklenmez.
+    print(f"✅ {bot.user} aktif ve butonlar sisteme tanıtıldı.")
 
 bot.run(os.environ['TOKEN'])
