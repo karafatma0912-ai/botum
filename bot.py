@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 TICKET_KATEGORI_ID = 1519782776067330078
 DESTEK_EKIBI_ROL_ID = 1514015410318479440
 ETKINLIK_ROL_ID = 1520077448358658138
-ONAY_RED_KANAL_ID = 1484933527668785323 # BURAYA KANAL ID'Nİ YAZ
+ONAY_RED_KANAL_ID = 1234567890123456789 # Buraya onay-red kanalının ID'sini yazmalısın
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
 TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/1484955416327749783/14.png"
 
@@ -23,16 +23,16 @@ class TicketYonetimView(View):
     async def onay(self, i: discord.Interaction, b: Button):
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
-            basvuran = i.channel.name.replace("başvuru-", "")
-            await log_kanal.send(f"@{basvuran} başvurunuz onaylandı ✅")
+            user_id = i.channel.topic
+            await log_kanal.send(f"<@{user_id}> başvurunuz onaylandı ✅")
         await i.response.send_message(f"Başvuru {i.user.mention} tarafından onaylandı!", ephemeral=False)
 
     @discord.ui.button(label="Red ❌", style=discord.ButtonStyle.red, custom_id="TICKET_RED_BTN")
     async def red(self, i: discord.Interaction, b: Button):
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
-            basvuran = i.channel.name.replace("başvuru-", "")
-            await log_kanal.send(f"@{basvuran} başvurunuz reddedildi ❌")
+            user_id = i.channel.topic
+            await log_kanal.send(f"<@{user_id}> başvurunuz reddedildi ❌")
         await i.response.send_message("Başvuru reddedildi. Kanal 5 saniye içinde silinecektir.", ephemeral=False)
         await asyncio.sleep(5)
         await i.channel.delete()
@@ -45,7 +45,7 @@ class TicketPaneliView(View):
         await i.response.defer(ephemeral=True)
         overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         if (rol := i.guild.get_role(DESTEK_EKIBI_ROL_ID)): overwrites[rol] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites)
+        kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites, topic=str(i.user.id))
         
         await kanal.send(f"{i.user.mention} {rol.mention if rol else ''}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
         await kanal.send("**Yönetim İşlemleri:**", view=TicketYonetimView())
