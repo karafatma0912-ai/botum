@@ -10,6 +10,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # AYARLAR
 TICKET_KATEGORI_ID = 1519782776067330078
 DESTEK_EKIBI_ROL_ID = 1514015410318479440
+EKSTRA_YETKILI_ROL_ID = 1484932780902191104 # Buraya diğer rolün ID'sini gir
 ETKINLIK_ROL_ID = 1520077448358658138
 ONAY_RED_KANAL_ID = 1484933527668785323 
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
@@ -19,8 +20,12 @@ TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/14
 class TicketYonetimView(View):
     def __init__(self): super().__init__(timeout=None)
 
+    def is_authorized(self, user: discord.Member):
+        return any(role.id in [DESTEK_EKIBI_ROL_ID, EKSTRA_YETKILI_ROL_ID] for role in user.roles)
+
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
+        if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
             user_id = i.channel.topic
@@ -29,6 +34,7 @@ class TicketYonetimView(View):
 
     @discord.ui.button(label="Red ❌", style=discord.ButtonStyle.red, custom_id="TICKET_RED_BTN")
     async def red(self, i: discord.Interaction, b: Button):
+        if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
             user_id = i.channel.topic
@@ -45,11 +51,11 @@ class TicketPaneliView(View):
         await i.response.defer(ephemeral=True)
         overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         if (rol := i.guild.get_role(DESTEK_EKIBI_ROL_ID)): overwrites[rol] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        if (rol2 := i.guild.get_role(EKSTRA_YETKILI_ROL_ID)): overwrites[rol2] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
         kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites, topic=str(i.user.id))
         
-        await kanal.send(f"{i.user.mention} {rol.mention if rol else ''}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
+        await kanal.send(f"{i.user.mention}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
         await kanal.send("**Yönetim İşlemleri:**", view=TicketYonetimView())
-        
         await i.followup.send(f"Başvuru odan oluşturuldu: {kanal.mention}", ephemeral=True)
 
 # --- INGAME ---
@@ -85,14 +91,13 @@ class EtkinlikView(View):
     async def bitir(self, i: discord.Interaction, b: Button):
         if i.user.guild_permissions.manage_messages:
             await i.response.defer()
-            rol = i.guild.get_role(1520077448358658138)
+            rol = i.guild.get_role(ETKINLIK_ROL_ID)
             if rol:
                 for user_id in self.liste:
                     member = i.guild.get_member(user_id) or await i.guild.fetch_member(user_id)
                     if member:
                         try: await member.remove_roles(rol)
                         except: pass
-            
             txt = "\n".join([f"**{i+1}.** <@{u}>" for i, u in enumerate(self.liste)])
             embed = discord.Embed(title=f"🏁 {self.ad} Etkinliği Bitti!", description=f"**Katılımcı Listesi:**\n{txt if self.liste else 'Katılımcı yok.'}", color=discord.Color.gold())
             await i.channel.send(embed=embed)
@@ -115,7 +120,6 @@ async def ingame(ctx, *, args: str):
         limit = int(parts[-1])
         ad = " ".join(parts[:-1])
     except: return await ctx.send("Hatalı kullanım! Doğrusu: !ingame [Etkinlik Adı] [Sayı]\nÖrnek: !ingame 22.00 Redzone Tik 20")
-    
     v = EtkinlikView(ad, limit)
     await ctx.send(embed=v.get_embed(), view=v)
 
