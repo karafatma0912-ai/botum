@@ -22,7 +22,7 @@ class TicketYonetimView(View):
 
     def is_authorized(self, user: discord.Member):
         # Her iki rolün ID'sini de kontrol eder
-        return any(role.id in [DESTEK_EKIBI_ROL_ID, EKSTRA_YETKILI_ROL_ID] for role in user.roles)
+        return any(role.id in [1514015410318479440, 1484932780902191104 ] for role in user.roles)
 
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
