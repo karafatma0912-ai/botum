@@ -49,17 +49,26 @@ class TicketPaneliView(View):
     @discord.ui.button(label="Başvuru Yap 📝", style=discord.ButtonStyle.blurple, custom_id="TICKET_BTN_UNIQUE_999")
     async def basvuru(self, i: discord.Interaction, b: Button):
         await i.response.defer(ephemeral=True)
-        overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         
+        # İzinleri tanımla
+        overwrites = {
+            i.guild.default_role: discord.PermissionOverwrite(read_messages=False), 
+            i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        }
+        
+        # Rolleri çek
         rol1 = i.guild.get_role(1514015410318479440)
         rol2 = i.guild.get_role(1484932780902191104)
-        if rol1: overwrites[rol1] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        if rol2: overwrites[rol2] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        
+        # Her iki role de kanalı görme izni ver
+        if rol1: overwrites[rol1] = discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_messages=True)
+        if rol2: overwrites[rol2] = discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_messages=True)
         
         kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites, topic=str(i.user.id))
         
-        # Etiketleme: Sadece rol1 (Destek Ekibi) etiketlenir
-        await kanal.send(f"{i.user.mention} {rol1.mention if rol1 else ''}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
+        # Etiketleme: Sadece rol1 etiketlenir
+        etiket = f"{rol1.mention if rol1 else ''}"
+        await kanal.send(f"{i.user.mention} {etiket}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
         await kanal.send("**Yönetim İşlemleri:**", view=TicketYonetimView())
         await i.followup.send(f"Başvuru odan oluşturuldu: {kanal.mention}", ephemeral=True)
 
