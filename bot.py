@@ -10,19 +10,18 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # AYARLAR
 TICKET_KATEGORI_ID = 1519782776067330078
 DESTEK_EKIBI_ROL_ID = 1514015410318479440
-EKSTRA_YETKILI_ROL_ID = 1484932780902191104 
+EKSTRA_YETKILI_ROL_ID = 1484932780902191104
 ETKINLIK_ROL_ID = 1520077448358658138
 ONAY_RED_KANAL_ID = 1484933527668785323 
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
 TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/1484955416327749783/14.png"
 
-# --- TICKET YÖNETİM (ONAY/RED) ---
+# --- TICKET YÖNETİM ---
 class TicketYonetimView(View):
     def __init__(self): super().__init__(timeout=None)
 
     def is_authorized(self, user: discord.Member):
-        # Her iki rolün ID'sini de kontrol eder
-        return any(role.id in [1514015410318479440, 1484932780902191104 ] for role in user.roles)
+        return any(role.id in [1514015410318479440, 1484932780902191104] for role in user.roles)
 
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
@@ -44,7 +43,7 @@ class TicketYonetimView(View):
         await asyncio.sleep(5)
         await i.channel.delete()
 
-# --- TICKET ---
+# --- TICKET PANEL ---
 class TicketPaneliView(View):
     def __init__(self): super().__init__(timeout=None)
     @discord.ui.button(label="Başvuru Yap 📝", style=discord.ButtonStyle.blurple, custom_id="TICKET_BTN_UNIQUE_999")
@@ -52,7 +51,6 @@ class TicketPaneliView(View):
         await i.response.defer(ephemeral=True)
         overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         
-        # İki role de izinleri ekledik
         rol1 = i.guild.get_role(1514015410318479440)
         rol2 = i.guild.get_role(1484932780902191104)
         if rol1: overwrites[rol1] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
@@ -60,9 +58,8 @@ class TicketPaneliView(View):
         
         kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites, topic=str(i.user.id))
         
-        # Etiketleme kısmını güncelledim
-        etiketler = f"{rol1.mention if rol1 else ''} {rol2.mention if rol2 else ''}"
-        await kanal.send(f"{i.user.mention} {etiketler}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
+        # Etiketleme: Sadece rol1 (Destek Ekibi) etiketlenir
+        await kanal.send(f"{i.user.mention} {rol1.mention if rol1 else ''}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
         await kanal.send("**Yönetim İşlemleri:**", view=TicketYonetimView())
         await i.followup.send(f"Başvuru odan oluşturuldu: {kanal.mention}", ephemeral=True)
 
