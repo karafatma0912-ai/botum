@@ -43,6 +43,17 @@ class TicketYonetimView(View):
         await asyncio.sleep(5)
         await i.channel.delete()
 
+    @discord.ui.button(label="Kapat 🔒", style=discord.ButtonStyle.secondary, custom_id="TICKET_KAPAT_BTN")
+    async def kapat(self, i: discord.Interaction, b: Button):
+        if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
+        
+        user_id = int(i.channel.topic)
+        user = i.guild.get_member(user_id)
+        
+        # Kullanıcının kanalı görme iznini kapat
+        await i.channel.set_permissions(user, read_messages=False, send_messages=False)
+        await i.response.send_message(f"Kanal kapatıldı ve {user.mention} erişimi kesildi.", ephemeral=False)
+
 # --- TICKET PANEL ---
 class TicketPaneliView(View):
     def __init__(self): super().__init__(timeout=None)
