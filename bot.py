@@ -27,8 +27,8 @@ class TicketYonetimView(View):
     async def onay(self, i: discord.Interaction, b: Button):
         if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
         
-        # Kanal ismini değiştir
-        await i.channel.edit(name=f"alındı-{i.channel.name.split('-')[-1]}")
+        # Kanal ismini sadece "alındı" yap
+        await i.channel.edit(name="alındı")
         
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
