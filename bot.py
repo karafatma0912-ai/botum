@@ -118,28 +118,22 @@ class EtkinlikView(View):
 # --- YOKLAMA KOMUTU ---
 @bot.command()
 async def yoklama(ctx):
-    # Bu komutu sadece aktif bir EtkinlikView mesajı üzerinden tetiklenecek şekilde düşünmelisin
-    # Şimdilik en son atılan etkinlik mesajındaki listeyi baz alır
     await ctx.send("⌛ Sunucu kontrol ediliyor, lütfen bekleyin...")
     try:
+        # FiveM varsayılan portu 30120'dir.
+        url = f"http://{FIVEM_IP}:30120/players.json"
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://{FIVEM_IP}:30120/players.json", timeout=5) as r:
-                if r.status != 200: return await ctx.send("Sunucu şu an yanıt vermiyor!")
+            async with session.get(url, timeout=5) as r:
+                if r.status != 200:
+                    await ctx.send(f"❌ Sunucu yanıt vermedi. Hata kodu: {r.status}")
+                    return
                 players = await r.json()
-                player_names = [p['name'].lower() for p in players]
-
-        # Etkinlik mesajını bul (en son atılanı varsayar)
-        # Gerçek bir sistemde, aktif olan EtkinlikView'ı bir değişkende tutmalısın.
-        # Basitlik adına burada botun hafızasında aktif olanı arıyoruz.
-        target_view = None
-        async for message in ctx.channel.history(limit=20):
-            if message.author == bot.user and message.embeds:
-                if "Ravens Ingame" in message.embeds[0].title:
-                    # Burada karmaşık bir yapı kurmak yerine mantığı anlıyorsun
-                    await ctx.send("Şu an aktif etkinlik verisi üzerinden karşılaştırma yapıldı.")
-                    break
+        
+        # Eğer buraya kadar geldiyse bağlantı başarılıdır
+        await ctx.send(f"✅ Bağlantı başarılı! Şu an sunucuda {len(players)} kişi aktif.")
+        
     except Exception as e:
-        await ctx.send(f"Hata oluştu: {e}")
+        await ctx.send(f"❌ Hata oluştu: {type(e).__name__} - {str(e)}")
 
 @bot.command()
 async def ticket_paneli(ctx):
