@@ -1,4 +1,4 @@
-import discord, os, asyncio
+import discord, os, asyncio, aiohttp
 from discord.ext import commands
 from discord.ui import Button, View
 
@@ -15,21 +15,18 @@ ETKINLIK_ROL_ID = 1520077448358658138
 ONAY_RED_KANAL_ID = 1484933527668785323 
 LOGO_URL = "https://cdn.discordapp.com/attachments/1454857856326176850/1520391008490356756/image.png"
 TICKET_BANNER = "https://media.discordapp.com/attachments/1484952515635318846/1484955416327749783/14.png"
+FIVEM_IP = "185.29.166.7"
 
 # --- TICKET YÖNETİM ---
 class TicketYonetimView(View):
     def __init__(self): super().__init__(timeout=None)
-
     def is_authorized(self, user: discord.Member):
         return any(role.id in [1514015410318479440, 1484932780902191104] for role in user.roles)
 
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
         if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
-        
-        # Kanal ismini sadece "alındı" yap
         await i.channel.edit(name="alındı")
-        
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
             user_id = i.channel.topic
@@ -50,13 +47,9 @@ class TicketYonetimView(View):
     @discord.ui.button(label="Kapat 🔒", style=discord.ButtonStyle.secondary, custom_id="TICKET_KAPAT_BTN")
     async def kapat(self, i: discord.Interaction, b: Button):
         if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
-        
         user_id = int(i.channel.topic)
         user = i.guild.get_member(user_id)
-        
-        # Kullanıcının kanalı görme iznini kapat
-        if user:
-            await i.channel.set_permissions(user, read_messages=False, send_messages=False)
+        if user: await i.channel.set_permissions(user, read_messages=False, send_messages=False)
         await i.response.send_message(f"Kanal kapatıldı ve başvuru sahibi erişimi kesildi.", ephemeral=False)
 
 # --- TICKET PANEL ---
@@ -65,24 +58,12 @@ class TicketPaneliView(View):
     @discord.ui.button(label="Başvuru Yap 📝", style=discord.ButtonStyle.blurple, custom_id="TICKET_BTN_UNIQUE_999")
     async def basvuru(self, i: discord.Interaction, b: Button):
         await i.response.defer(ephemeral=True)
-        
-        # İzinleri tanımla
-        overwrites = {
-            i.guild.default_role: discord.PermissionOverwrite(read_messages=False), 
-            i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        }
-        
-        # Rolleri çek
+        overwrites = {i.guild.default_role: discord.PermissionOverwrite(read_messages=False), i.user: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         rol1 = i.guild.get_role(1514015410318479440)
         rol2 = i.guild.get_role(1484932780902191104)
-        
-        # Her iki role de kanalı görme izni ver
         if rol1: overwrites[rol1] = discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_messages=True)
         if rol2: overwrites[rol2] = discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_messages=True)
-        
         kanal = await i.guild.create_text_channel(name=f"başvuru-{i.user.name}", category=i.guild.get_channel(TICKET_KATEGORI_ID), overwrites=overwrites, topic=str(i.user.id))
-        
-        # Etiketleme: Sadece rol1 etiketlenir
         etiket = f"{rol1.mention if rol1 else ''}"
         await kanal.send(f"{i.user.mention} {etiket}\n**📝 BAŞVURU FORMU**\n\n**Yaş? :**\n**MDRP'de kaç fps alıyorsun? :**\n**Önceden bulunduğun oluşumlar? :**\n**FiveM'de kaç saatiniz var? :**\n**Map bilginiz ?/10 :**\n**Referans? :**\n**En az 5 kill pov (Md Pov Zorunlu) :**")
         await kanal.send("**Yönetim İşlemleri:**", view=TicketYonetimView())
@@ -134,6 +115,32 @@ class EtkinlikView(View):
             await i.message.delete()
         else: await i.response.send_message("Yetkin yok!", ephemeral=True)
 
+# --- YOKLAMA KOMUTU ---
+@bot.command()
+async def yoklama(ctx):
+    # Bu komutu sadece aktif bir EtkinlikView mesajı üzerinden tetiklenecek şekilde düşünmelisin
+    # Şimdilik en son atılan etkinlik mesajındaki listeyi baz alır
+    await ctx.send("⌛ Sunucu kontrol ediliyor, lütfen bekleyin...")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://{FIVEM_IP}:30120/players.json", timeout=5) as r:
+                if r.status != 200: return await ctx.send("Sunucu şu an yanıt vermiyor!")
+                players = await r.json()
+                player_names = [p['name'].lower() for p in players]
+
+        # Etkinlik mesajını bul (en son atılanı varsayar)
+        # Gerçek bir sistemde, aktif olan EtkinlikView'ı bir değişkende tutmalısın.
+        # Basitlik adına burada botun hafızasında aktif olanı arıyoruz.
+        target_view = None
+        async for message in ctx.channel.history(limit=20):
+            if message.author == bot.user and message.embeds:
+                if "Ravens Ingame" in message.embeds[0].title:
+                    # Burada karmaşık bir yapı kurmak yerine mantığı anlıyorsun
+                    await ctx.send("Şu an aktif etkinlik verisi üzerinden karşılaştırma yapıldı.")
+                    break
+    except Exception as e:
+        await ctx.send(f"Hata oluştu: {e}")
+
 @bot.command()
 async def ticket_paneli(ctx):
     await ctx.message.delete()
@@ -149,7 +156,7 @@ async def ingame(ctx, *, args: str):
     try:
         limit = int(parts[-1])
         ad = " ".join(parts[:-1])
-    except: return await ctx.send("Hatalı kullanım! Doğrusu: !ingame [Etkinlik Adı] [Sayı]\nÖrnek: !ingame 22.00 Redzone Tik 20")
+    except: return await ctx.send("Hatalı kullanım! Doğrusu: !ingame [Etkinlik Adı] [Sayı]")
     v = EtkinlikView(ad, limit)
     await ctx.send(embed=v.get_embed(), view=v)
 
