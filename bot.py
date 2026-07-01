@@ -26,6 +26,10 @@ class TicketYonetimView(View):
     @discord.ui.button(label="Onay ✅", style=discord.ButtonStyle.green, custom_id="TICKET_ONAY_BTN")
     async def onay(self, i: discord.Interaction, b: Button):
         if not self.is_authorized(i.user): return await i.response.send_message("Yetkin yok!", ephemeral=True)
+        
+        # Kanal ismini değiştir
+        await i.channel.edit(name=f"alındı-{i.channel.name.split('-')[-1]}")
+        
         log_kanal = i.guild.get_channel(ONAY_RED_KANAL_ID)
         if log_kanal:
             user_id = i.channel.topic
@@ -51,8 +55,9 @@ class TicketYonetimView(View):
         user = i.guild.get_member(user_id)
         
         # Kullanıcının kanalı görme iznini kapat
-        await i.channel.set_permissions(user, read_messages=False, send_messages=False)
-        await i.response.send_message(f"Kanal kapatıldı ve {user.mention} erişimi kesildi.", ephemeral=False)
+        if user:
+            await i.channel.set_permissions(user, read_messages=False, send_messages=False)
+        await i.response.send_message(f"Kanal kapatıldı ve başvuru sahibi erişimi kesildi.", ephemeral=False)
 
 # --- TICKET PANEL ---
 class TicketPaneliView(View):
